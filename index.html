@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Resume Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,700;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,700;1,8..60,400;1,8..60,700&family=Lato:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bitmaks/cm-web-fonts@latest/font/Serif/cmun-serif.css">
+<style id="pageRule">@page { size: letter; margin: 0.5in; }</style>
+<style>
+  :root {
+    --bg: #eef0f3;
+    --panel: #ffffff;
+    --ink: #1c2330;
+    --muted: #677184;
+    --line: #dde1e7;
+    --accent: #2457d6;
+    --accent-soft: #e8eefc;
+    --danger: #c43c3c;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: Inter, "Segoe UI", system-ui, sans-serif; color: var(--ink); background: var(--bg); font-size: 14px; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+
+  /* ---------- Top bar ---------- */
+  .topbar { height: 56px; display: flex; align-items: center; gap: 8px; padding: 0 16px; background: var(--panel); border-bottom: 1px solid var(--line); position: relative; z-index: 5; }
+  .brand { font-weight: 700; font-size: 15px; margin-right: 12px; white-space: nowrap; }
+  .brand span { color: var(--accent); }
+  .spacer { flex: 1; }
+  .btn { border: 1px solid var(--line); background: var(--panel); padding: 7px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+  .btn:hover { background: #f5f6f8; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .btn.primary:hover { background: #1d48b5; }
+  .btn.ghost { border-color: transparent; }
+  .btn.danger { color: var(--danger); }
+  .group { display: flex; gap: 6px; align-items: center; padding-left: 10px; margin-left: 4px; border-left: 1px solid var(--line); }
+  select.vsel { padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); max-width: 200px; }
+
+  /* ---------- Layout ---------- */
+  .main { display: grid; grid-template-columns: minmax(400px, 540px) 1fr; height: calc(100vh - 56px); }
+  #editor { overflow-y: auto; padding: 16px; border-right: 1px solid var(--line); background: #f7f8fa; }
+  #previewPane { display: flex; flex-direction: column; min-width: 0; }
+
+  /* ---------- Editor cards ---------- */
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 14px; }
+  .card-h { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .card-h h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); flex: 1; }
+  .card-b { padding: 12px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .f { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .f.full { grid-column: 1 / -1; }
+  .f > span { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .f input, .f textarea, .f select { border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; background: #fff; width: 100%; }
+  .f textarea { resize: vertical; line-height: 1.45; font-size: 13px; }
+  .f input:focus, .f textarea:focus, .f select:focus, .sec-title:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+
+  .clist { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+  .clist-h { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 12px; }
+  .crow { display: grid; grid-template-columns: 22px 92px 1fr; align-items: center; gap: 6px; padding: 3px 6px 3px 2px; border: 1px solid transparent; border-radius: 6px; background: #fff; position: relative; }
+  .crow:hover { border-color: var(--line); }
+  .crow.dragging { opacity: .4; }
+  .crow.drop-before::before, .crow.drop-after::after { content: ""; position: absolute; left: 0; right: 0; height: 2px; background: var(--accent); border-radius: 2px; }
+  .crow.drop-before::before { top: -4px; }
+  .crow.drop-after::after { bottom: -4px; }
+  .handle { cursor: grab; color: #9aa3b2; text-align: center; font-size: 15px; line-height: 1; padding: 6px 0; border-radius: 4px; user-select: none; }
+  .handle:hover { background: #eef0f3; color: var(--ink); }
+  .handle:active { cursor: grabbing; }
+  .crow .clabel { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .crow input { border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; width: 100%; min-width: 0; }
+  .crow input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+  .sec.is-hidden { opacity: .55; }
+  .sec-title { flex: 1; border: 1px solid transparent; border-radius: 6px; padding: 5px 8px; font-weight: 600; font-size: 15px; min-width: 0; background: transparent; }
+  .sec-title:hover { border-color: var(--line); }
+  .tag { font-size: 11px; color: var(--muted); background: #f0f2f5; border-radius: 4px; padding: 2px 6px; text-transform: capitalize; }
+  .ib { border: none; background: none; cursor: pointer; padding: 4px 6px; border-radius: 4px; color: var(--muted); font-size: 13px; line-height: 1; }
+  .ib:hover { background: #eef0f3; color: var(--ink); }
+  .ib.del:hover { color: var(--danger); background: #fbeaea; }
+  .ib:disabled { opacity: .3; cursor: default; background: none; }
+
+  .item { border: 1px solid var(--line); border-radius: 6px; margin-bottom: 10px; background: #fcfcfd; }
+  .item-head { display: flex; align-items: center; gap: 4px; padding: 6px 6px 6px 4px; cursor: pointer; user-select: none; }
+  .item-sum { flex: 1; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item-sum.empty { color: var(--muted); font-style: italic; font-weight: 400; }
+  .item-body { padding: 4px 10px 12px; }
+  .item.collapsed .item-body { display: none; }
+  .chev { display: inline-block; transition: transform .15s; }
+  .item:not(.collapsed) .chev { transform: rotate(90deg); }
+  .add { width: 100%; border: 1px dashed #c3c9d3; background: none; border-radius: 6px; padding: 8px; color: var(--accent); cursor: pointer; font-weight: 500; }
+  .add:hover { background: var(--accent-soft); }
+  .addsec { display: flex; flex-wrap: wrap; gap: 6px; }
+  .hint { font-size: 12px; color: var(--muted); margin: 8px 0 0; line-height: 1.5; }
+  code { background: #f0f2f5; padding: 1px 4px; border-radius: 3px; font-size: 12px; }
+
+  /* ---------- Preview ---------- */
+  .pv-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel); font-size: 13px; }
+  .badge { padding: 3px 10px; border-radius: 999px; font-weight: 600; font-size: 12px; }
+  .badge.ok { background: #e4f5ea; color: #1c7a3d; }
+  .badge.warn { background: #fdf1dc; color: #9a5b00; }
+  .pv-scroll { flex: 1; overflow: auto; padding: 24px; }
+  #pageOuter { margin: 0 auto; position: relative; }
+  .page { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 8px 28px rgba(0,0,0,.10); transform-origin: top left; position: absolute; top: 0; left: 0; color: #000; }
+  .pbreak { position: absolute; left: 0; right: 0; border-top: 1.5px dashed #e0703a; pointer-events: none; }
+  .pbreak span { position: absolute; right: 6px; top: 2px; font: 600 10px Inter, sans-serif; color: #e0703a; background: #fff; padding: 0 4px; }
+
+  /* ---------- Resume typography (Jake's-style) ---------- */
+  .resume { line-height: var(--lh, 1.2); }
+  .resume a { color: inherit; text-decoration: none; }
+  .r-name { text-align: center; font-size: 2.25em; font-weight: 700; font-variant: small-caps; line-height: 1.05; margin: 0 0 .15em; }
+  .r-contact { text-align: center; font-size: .91em; }
+  .r-contact a { text-decoration: underline; text-underline-offset: 1.5px; text-decoration-thickness: .5px; }
+  .r-contact .sep { margin: 0 .45em; }
+  .r-sec { margin-top: .55em; }
+  .r-sec h2 { font-size: 1.09em; font-weight: 400; font-variant: small-caps; letter-spacing: .01em; margin: 0 0 .3em; padding-bottom: .08em; border-bottom: .6pt solid #000; break-after: avoid; }
+  .r-items { padding-left: .15in; }
+  .r-entry { margin-bottom: .32em; break-inside: avoid; }
+  .r-row { display: flex; justify-content: space-between; align-items: baseline; gap: 1.2em; }
+  .r-row .r { white-space: nowrap; text-align: right; flex-shrink: 0; }
+  .r-row.sub { font-size: .91em; font-style: italic; }
+  .r-bul { margin: .12em 0 0; padding-left: .2in; font-size: .91em; }
+  .r-bul li { margin-bottom: .1em; padding-left: .1em; }
+  .r-skills { font-size: .91em; }
+  .r-skills div { margin-bottom: .1em; }
+  .r-pipe { margin: 0 .35em; }
+
+  /* ---------- Dialog ---------- */
+  dialog { border: none; border-radius: 10px; padding: 0; width: min(440px, calc(100vw - 32px)); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+  dialog::backdrop { background: rgba(20,25,35,.4); }
+  .dlg { padding: 20px; }
+  .dlg h3 { margin: 0 0 10px; }
+  .dlg ol { padding-left: 20px; line-height: 1.7; margin: 0 0 14px; }
+  .dlg .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .dlg label { font-size: 13px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; height: auto; }
+    #editor { border-right: none; }
+    #previewPane { min-height: 80vh; }
+    .topbar { flex-wrap: wrap; height: auto; padding: 8px 16px; }
+  }
+
+  /* ---------- Print: only the resume ---------- */
+  @media print {
+    html, body { background: #fff; height: auto; }
+    .topbar, #editor, .pv-bar, .pbreak, dialog { display: none !important; }
+    .main { display: block; height: auto; }
+    #previewPane, .pv-scroll { display: block; overflow: visible; padding: 0; }
+    #pageOuter { width: auto !important; height: auto !important; }
+    .page { position: static; transform: none !important; box-shadow: none; padding: 0 !important; width: auto !important; min-height: 0 !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Resume<span>Builder</span></div>
+  <button class="btn ghost" data-top="new" title="Start a blank resume">New</button>
+  <button class="btn ghost" data-top="sample" title="Load the example resume">Example</button>
+  <button class="btn ghost" data-top="import" title="Load a .json resume file">Import</button>
+  <button class="btn ghost" data-top="export" title="Save this resume as a .json file">Export</button>
+  <div class="group">
+    <select class="vsel" id="versionSel" title="Saved versions"></select>
+    <button class="btn" data-top="saveVersion" title="Save the current resume as a named version">Save version</button>
+    <button class="btn ghost danger" data-top="deleteVersion" title="Delete the selected version">Delete</button>
+  </div>
+  <div class="spacer"></div>
+  <button class="btn primary" data-top="pdf">Download PDF</button>
+  <input type="file" id="fileIn" accept=".json,application/json" hidden>
+</header>
+
+<div class="main">
+  <div id="editor"></div>
+  <div id="previewPane">
+    <div class="pv-bar">
+      <span id="pageBadge" class="badge ok">1 page</span>
+      <span id="pageMsg" style="color:var(--muted)"></span>
+    </div>
+    <div class="pv-scroll" id="pvScroll">
+      <div id="pageOuter">
+        <div class="page" id="page">
+          <div class="resume" id="resume"></div>
+          <div id="breaks"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<dialog id="pdfDlg">
+  <div class="dlg">
+    <h3>Save as PDF</h3>
+    <ol>
+      <li>Set <b>Destination</b> to <b>Save as PDF</b>.</li>
+      <li>Open <b>More settings</b> and <b>uncheck "Headers and footers"</b>.</li>
+      <li>Leave <b>Margins</b> on <b>Default</b> and <b>Scale</b> at <b>100</b>.</li>
+    </ol>
+    <p class="hint" style="margin:0 0 14px">The PDF keeps real, selectable text and clickable links, so ATS systems can read it.</p>
+    <div class="row">
+      <label><input type="checkbox" id="dlgSkip"> Don't show again</label>
+      <div style="display:flex;gap:8px">
+        <button class="btn" id="dlgCancel">Cancel</button>
+        <button class="btn primary" id="dlgGo">Open print dialog</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<script>
+/* ================= Config ================= */
+const FONTS = {
+  cm:       { label: "Computer Modern (Jake's Resume)", css: '"Computer Modern Serif", "CMU Serif", "Latin Modern Roman", "Times New Roman", serif' },
+  times:    { label: 'Times New Roman',                 css: '"Times New Roman", Times, serif' },
+  garamond: { label: 'Garamond',                         css: '"EB Garamond", Garamond, serif' },
+  source:   { label: 'Source Serif',                     css: '"Source Serif 4", Georgia, serif' },
+  georgia:  { label: 'Georgia',                          css: 'Georgia, serif' },
+  calibri:  { label: 'Calibri',                          css: 'Calibri, Carlito, "Segoe UI", Arial, sans-serif' },
+  arial:    { label: 'Arial / Helvetica',                css: 'Arial, Helvetica, sans-serif' },
+  lato:     { label: 'Lato',                             css: 'Lato, Arial, sans-serif' },
+};
+const PAPER = { letter: { w: 8.5, h: 11, label: 'US Letter (8.5 × 11 in)' }, a4: { w: 8.27, h: 11.69, label: 'A4 (210 × 297 mm)' } };
+const CONTACT = {
+  phone:    ['Phone', '(555) 123-4567'],
+  email:    ['Email', 'you@email.com'],
+  linkedin: ['LinkedIn', 'linkedin.com/in/you'],
+  github:   ['GitHub', 'github.com/you'],
+  website:  ['Website', 'yoursite.dev'],
+  location: ['Location', 'Austin, TX'],
+};
+const CONTACT_ORDER = ['phone', 'email', 'linkedin', 'github', 'website', 'location'];
+const BULLETS_LABEL = 'Bullet points (one per line; **bold** and *italic* work)';
+
+const SCHEMAS = {
+  education: { name: 'Education', addLabel: 'school', fields: [
+    ['school', 'University / School', 'University of Texas at Austin', 1],
+    ['degree', 'Degree & Major', 'Bachelor of Science in Computer Science', 1],
+    ['location', 'Location', 'Austin, TX'],
+    ['gpa', 'GPA (optional)', '3.8 / 4.0'],
+    ['start', 'Start date', 'Aug. 2022'],
+    ['end', 'Graduation date', 'May 2026'],
+  ], bullets: { label: 'Extra lines (optional): coursework, honors; one per line', rows: 2 } },
+  experience: { name: 'Experience', addLabel: 'position', fields: [
+    ['title', 'Job title', 'Software Engineer Intern', 1],
+    ['company', 'Company', 'Acme Corp.'],
+    ['location', 'Location', 'Seattle, WA'],
+    ['start', 'Start date', 'May 2025'],
+    ['end', 'End date', 'Present'],
+  ], bullets: { label: BULLETS_LABEL, rows: 5 } },
+  projects: { name: 'Projects', addLabel: 'project', fields: [
+    ['name', 'Project name', 'Gitlytics'],
+    ['tech', 'Technologies', 'Python, Flask, React'],
+    ['link', 'Link (optional)', 'github.com/you/gitlytics', 1],
+    ['start', 'Start date', 'Jan. 2025'],
+    ['end', 'End date', 'Present'],
+  ], bullets: { label: BULLETS_LABEL, rows: 4 } },
+  skills: { name: 'Technical Skills', addLabel: 'skill category', fields: [
+    ['label', 'Category', 'Languages'],
+    ['value', 'Skills', 'Java, Python, C++, SQL', 0],
+  ] },
+  custom: { name: 'Leadership', addLabel: 'entry', fields: [
+    ['title', 'Title / role', 'President', 1],
+    ['subtitle', 'Organization', 'ACM Student Chapter'],
+    ['location', 'Location', 'Austin, TX'],
+    ['start', 'Start date', 'Sep. 2023'],
+    ['end', 'End date', 'Present'],
+  ], bullets: { label: BULLETS_LABEL, rows: 3 } },
+};
+
+/* ================= State ================= */
+const uid = () => Math.random().toString(36).slice(2, 10);
+const DEFAULT_SETTINGS = { font: 'cm', size: 11, lh: 1.2, margin: 0.5, paper: 'letter' };
+
+function blankItem(type) {
+  const it = { id: uid() };
+  SCHEMAS[type].fields.forEach(([k]) => it[k] = '');
+  if (SCHEMAS[type].bullets) it.bullets = '';
+  return it;
+}
+function blankSection(type, title) {
+  return { id: uid(), type, title: title || SCHEMAS[type].name, visible: true, items: [blankItem(type)] };
+}
+function blankResume() {
+  return {
+    settings: { ...DEFAULT_SETTINGS },
+    header: { name: '', phone: '', email: '', linkedin: '', github: '', website: '', location: '', order: [...CONTACT_ORDER] },
+    sections: [blankSection('education'), blankSection('experience'), blankSection('projects'), blankSection('skills')],
+  };
+}
+function sampleResume() {
+  const S = (type, title, items) => ({ id: uid(), type, title, visible: true, items: items.map(x => ({ id: uid(), ...x })) });
+  return {
+    settings: { ...DEFAULT_SETTINGS },
+    header: { name: 'Alex Morgan', phone: '(512) 555-0142', email: 'alex.morgan@email.com', linkedin: 'linkedin.com/in/alexmorgan', github: 'github.com/alexmorgan', website: '', location: 'Austin, TX' },
+    sections: [
+      S('education', 'Education', [
+        { school: 'University of Texas at Austin', location: 'Austin, TX', degree: 'Bachelor of Science in Computer Science, Minor in Mathematics', gpa: '3.8/4.0', start: 'Aug. 2022', end: 'May 2026',
+          bullets: '**Relevant Coursework:** Data Structures, Algorithms, Operating Systems, Databases, Machine Learning' },
+      ]),
+      S('experience', 'Experience', [
+        { title: 'Software Engineer Intern', company: 'Northwind Analytics', location: 'Seattle, WA', start: 'May 2025', end: 'Aug. 2025',
+          bullets: 'Built a real-time event ingestion service in Go handling **40K events/sec**, cutting dashboard latency by 65%\nDesigned a PostgreSQL partitioning scheme that reduced monthly storage costs by $12K\nAdded end-to-end tests with Playwright, raising release confidence and catching 30+ regressions pre-deploy' },
+        { title: 'Undergraduate Research Assistant', company: 'UT Austin Systems Lab', location: 'Austin, TX', start: 'Sep. 2024', end: 'Present',
+          bullets: 'Developed a Python profiling toolkit to analyze memory usage across 200+ distributed training jobs\nCo-authored a workshop paper on scheduling heuristics for GPU clusters' },
+      ]),
+      S('projects', 'Projects', [
+        { name: 'Gitlytics', tech: 'Python, Flask, React, PostgreSQL, Docker', link: '', start: 'Jan. 2025', end: 'Present',
+          bullets: 'Developed a full-stack web app that visualizes GitHub repository activity with interactive charts\nImplemented OAuth login and background jobs with Celery and Redis to fetch data asynchronously' },
+        { name: 'Campus Eats', tech: 'TypeScript, Next.js, Firebase', link: '', start: 'Sep. 2024', end: 'Dec. 2024',
+          bullets: 'Shipped a food-ordering app used by 1,500+ students with live order tracking' },
+      ]),
+      S('skills', 'Technical Skills', [
+        { label: 'Languages', value: 'Java, Python, Go, C/C++, SQL, JavaScript, TypeScript, HTML/CSS' },
+        { label: 'Frameworks', value: 'React, Node.js, Flask, Next.js, JUnit, Pytest' },
+        { label: 'Developer Tools', value: 'Git, Docker, AWS, Google Cloud, Linux, VS Code' },
+        { label: 'Libraries', value: 'pandas, NumPy, Matplotlib, PyTorch' },
+      ]),
+    ],
+  };
+}
+
+const LS = {
+  get(k, fallback) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch { return fallback; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+const KEY_DRAFT = 'rb.draft', KEY_VERSIONS = 'rb.versions', KEY_LOADED = 'rb.loadedName', KEY_SKIP = 'rb.skipPdfTip';
+
+function normalize(d) {
+  const r = blankResume();
+  if (!d || typeof d !== 'object') return r;
+  r.settings = { ...DEFAULT_SETTINGS, ...(d.settings || {}) };
+  r.header = { ...r.header, ...(d.header || {}) };
+  const ord = Array.isArray(r.header.order) ? r.header.order.filter(k => CONTACT[k]) : [];
+  r.header.order = [...new Set([...ord, ...CONTACT_ORDER])];
+  if (Array.isArray(d.sections)) {
+    r.sections = d.sections.filter(s => s && SCHEMAS[s.type]).map(s => ({
+      id: s.id || uid(), type: s.type, title: s.title ?? SCHEMAS[s.type].name, visible: s.visible !== false,
+      items: (s.items || []).map(it => ({ ...blankItem(s.type), ...it, id: it.id || uid() })),
+    }));
+  }
+  return r;
+}
+
+let state = normalize(LS.get(KEY_DRAFT, null) || sampleResume());
+let loadedName = LS.get(KEY_LOADED, '');
+const collapsed = new Set();
+
+/* ================= Helpers ================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function inline(s) {
+  return esc(s)
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    .replace(/(^|[^*])\*(?!\s)([^*]+?)\*/g, '$1<i>$2</i>');
+}
+const dates = it => [it.start, it.end].map(x => (x || '').trim()).filter(Boolean).join(' – ');
+const bulletLines = t => String(t || '').split('\n').map(l => l.trim().replace(/^([-•●▪–*]\s+)/, '')).filter(Boolean);
+const displayUrl = u => String(u).trim().replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/+$/, '');
+const hrefUrl = u => /^https?:\/\//i.test(u.trim()) ? u.trim() : 'https://' + u.trim();
+function getPath(obj, path) { return path.split('.').reduce((o, k) => o?.[k], obj); }
+function setPath(obj, path, val) {
+  const ks = path.split('.'); const last = ks.pop();
+  ks.reduce((o, k) => o[k], obj)[last] = val;
+}
+
+/* ================= Resume rendering ================= */
+function row(l, r, cls = '') {
+  return `<div class="r-row ${cls}"><div class="l">${l}</div>${r ? `<div class="r">${r}</div>` : ''}</div>`;
+}
+function bullets(it) {
+  const ls = bulletLines(it.bullets);
+  return ls.length ? `<ul class="r-bul">${ls.map(l => `<li>${inline(l)}</li>`).join('')}</ul>` : '';
+}
+function isEmpty(it) {
+  return Object.entries(it).every(([k, v]) => k === 'id' || !String(v || '').trim());
+}
+const RENDER = {
+  education: it => {
+    const deg = [it.degree, it.gpa ? `GPA: ${it.gpa}` : ''].filter(Boolean).map(esc).join(', ');
+    return row(`<b>${esc(it.school)}</b>`, esc(it.location)) + (deg || dates(it) ? row(deg, esc(dates(it)), 'sub') : '') + bullets(it);
+  },
+  experience: it => row(`<b>${esc(it.title)}</b>`, esc(dates(it))) +
+    (it.company || it.location ? row(esc(it.company), esc(it.location), 'sub') : '') + bullets(it),
+  custom: it => row(`<b>${esc(it.title)}</b>`, esc(dates(it))) +
+    (it.subtitle || it.location ? row(esc(it.subtitle), esc(it.location), 'sub') : '') + bullets(it),
+  projects: it => {
+    let l = `<b>${esc(it.name)}</b>`;
+    if (it.tech) l += `<span class="r-pipe">|</span><i>${esc(it.tech)}</i>`;
+    if (it.link) l += `<span class="r-pipe">|</span><a href="${esc(hrefUrl(it.link))}"><u>${esc(displayUrl(it.link))}</u></a>`;
+    return row(l, esc(dates(it))) + bullets(it);
+  },
+};
+
+function renderResume() {
+  const h = state.header;
+  const contact = [];
+  for (const k of h.order) {
+    const v = String(h[k] || '').trim();
+    if (!v) continue;
+    if (k === 'email') contact.push(`<a href="mailto:${esc(v)}">${esc(v)}</a>`);
+    else if (k === 'phone' || k === 'location') contact.push(`<span>${esc(v)}</span>`);
+    else contact.push(`<a href="${esc(hrefUrl(v))}">${esc(displayUrl(v))}</a>`);
+  }
+
+  let html = `<div class="r-name">${esc(h.name || 'Your Name')}</div>`;
+  if (contact.length) html += `<div class="r-contact">${contact.join('<span class="sep">|</span>')}</div>`;
+
+  for (const s of state.sections) {
+    if (!s.visible) continue;
+    const items = s.items.filter(it => !isEmpty(it));
+    if (!items.length) continue;
+    html += `<section class="r-sec"><h2>${esc(s.title)}</h2><div class="r-items">`;
+    if (s.type === 'skills') {
+      html += `<div class="r-skills">${items.map(it => `<div>${it.label ? `<b>${esc(it.label)}</b>: ` : ''}${inline(it.value)}</div>`).join('')}</div>`;
+    } else {
+      html += items.map(it => `<div class="r-entry">${RENDER[s.type](it)}</div>`).join('');
+    }
+    html += `</div></section>`;
+  }
+  $('#resume').innerHTML = html;
+  layoutPreview();
+}
+
+function applySettings() {
+  const st = state.settings, paper = PAPER[st.paper] || PAPER.letter;
+  const page = $('#page');
+  page.style.fontFamily = (FONTS[st.font] || FONTS.cm).css;
+  page.style.fontSize = st.size + 'pt';
+  page.style.setProperty('--lh', st.lh);
+  page.style.padding = st.margin + 'in';
+  page.style.width = paper.w + 'in';
+  $('#pageRule').textContent = `@page { size: ${st.paper === 'a4' ? 'A4' : 'letter'}; margin: ${st.margin}in; }`;
+}
+
+function layoutPreview() {
+  const st = state.settings, paper = PAPER[st.paper] || PAPER.letter;
+  const page = $('#page'), res = $('#resume'), outer = $('#pageOuter'), scroll = $('#pvScroll');
+  const pageW = paper.w * 96, pageH = paper.h * 96, m = st.margin * 96, usable = pageH - 2 * m;
+  const contentH = res.scrollHeight;
+  const pages = Math.max(1, Math.ceil((contentH - 1) / usable));
+  page.style.minHeight = (pages * pageH) + 'px';
+
+  let br = '';
+  for (let k = 1; k < pages; k++) br += `<div class="pbreak" style="top:${m + k * usable}px"><span>Page ${k + 1} starts here</span></div>`;
+  $('#breaks').innerHTML = br;
+
+  const s = Math.min(1, (scroll.clientWidth - 48) / pageW);
+  page.style.transform = `scale(${s})`;
+  outer.style.width = pageW * s + 'px';
+  outer.style.height = page.offsetHeight * s + 'px';
+
+  const badge = $('#pageBadge'), msg = $('#pageMsg');
+  badge.textContent = pages === 1 ? '1 page' : `${pages} pages`;
+  badge.className = 'badge ' + (pages === 1 ? 'ok' : 'warn');
+  if (pages === 1) {
+    const left = Math.round((usable - contentH) / 96 * 100) / 100;
+    msg.textContent = `${left.toFixed(2)} in of space left on the page`;
+  } else {
+    const over = (contentH - usable * (pages - 1)) / 96;
+    msg.textContent = `Over by about ${over.toFixed(2)} in. Most US résumés fit on one page; try a smaller font or margin.`;
+  }
+}
+
+/* ================= Editor rendering ================= */
+function field(path, label, value, ph, full, textarea, rows) {
+  const cls = 'f' + (full ? ' full' : '');
+  if (textarea) return `<label class="${cls}"><span>${esc(label)}</span><textarea data-path="${path}" rows="${rows || 3}" placeholder="${esc(ph || '')}">${esc(value)}</textarea></label>`;
+  return `<label class="${cls}"><span>${esc(label)}</span><input data-path="${path}" value="${esc(value)}" placeholder="${esc(ph || '')}"></label>`;
+}
+function selectField(path, label, value, options) {
+  return `<label class="f"><span>${esc(label)}</span><select data-path="${path}">${
+    options.map(([v, l]) => `<option value="${esc(v)}"${String(v) === String(value) ? ' selected' : ''}>${esc(l)}</option>`).join('')
+  }</select></label>`;
+}
+function summary(type, it) {
+  const t = {
+    education: [it.school, it.degree],
+    experience: [it.title, it.company],
+    projects: [it.name, it.tech],
+    skills: [it.label, it.value],
+    custom: [it.title, it.subtitle],
+  }[type].filter(x => x && x.trim());
+  return t.join(' · ');
+}
+
+function renderEditor() {
+  const st = state.settings, h = state.header;
+  let html = '';
+
+  html += `<div class="card"><div class="card-h"><h3>Page &amp; font</h3></div><div class="card-b grid">
+    ${selectField('settings.font', 'Font', st.font, Object.entries(FONTS).map(([k, f]) => [k, f.label]))}
+    ${selectField('settings.paper', 'Paper size', st.paper, Object.entries(PAPER).map(([k, p]) => [k, p.label]))}
+    ${selectField('settings.size', 'Font size', st.size, [10, 10.5, 11, 11.5, 12].map(v => [v, v + ' pt']))}
+    ${selectField('settings.margin', 'Margins', st.margin, [0.4, 0.5, 0.6, 0.75, 1].map(v => [v, v + ' in']))}
+    ${selectField('settings.lh', 'Line spacing', st.lh, [[1.1, 'Tight'], [1.15, 'Compact'], [1.2, 'Normal'], [1.3, 'Relaxed']])}
+  </div></div>`;
+
+  html += `<div class="card"><div class="card-h"><h3>Header</h3></div><div class="card-b">
+    ${field('header.name', 'Full name', h.name, 'Alex Morgan', 1)}
+    <div class="clist-h">Contact line: drag <b>⠿</b> to reorder. Leave a field empty to hide it.</div>
+    <div class="clist" id="clist">
+      ${h.order.map(k => `<div class="crow" data-key="${k}">
+        <span class="handle" title="Drag to reorder">⠿</span>
+        <span class="clabel">${CONTACT[k][0]}</span>
+        <input data-path="header.${k}" value="${esc(h[k])}" placeholder="${esc(CONTACT[k][1])}" aria-label="${CONTACT[k][0]}">
+      </div>`).join('')}
+    </div>
+  </div></div>`;
+
+  state.sections.forEach((s, i) => {
+    const sch = SCHEMAS[s.type], last = state.sections.length - 1;
+    html += `<div class="card sec${s.visible ? '' : ' is-hidden'}">
+      <div class="card-h">
+        <input class="sec-title" data-path="sections.${i}.title" value="${esc(s.title)}" title="Rename section">
+        <span class="tag">${s.type === 'custom' ? 'custom' : s.type}</span>
+        <button class="ib" data-action="secUp" data-s="${i}" title="Move section up" ${i === 0 ? 'disabled' : ''}>↑</button>
+        <button class="ib" data-action="secDown" data-s="${i}" title="Move section down" ${i === last ? 'disabled' : ''}>↓</button>
+        <button class="ib" data-action="secToggle" data-s="${i}" title="${s.visible ? 'Hide from resume' : 'Show on resume'}">${s.visible ? 'Hide' : 'Show'}</button>
+        <button class="ib del" data-action="secDel" data-s="${i}" title="Delete section">✕</button>
+      </div><div class="card-b">`;
+    s.items.forEach((it, k) => {
+      const sum = summary(s.type, it), lastI = s.items.length - 1;
+      html += `<div class="item${collapsed.has(it.id) ? ' collapsed' : ''}">
+        <div class="item-head" data-action="itemToggle" data-id="${it.id}">
+          <span class="ib chev">▸</span>
+          <span class="item-sum${sum ? '' : ' empty'}" data-sumfor="${it.id}">${esc(sum || 'New ' + sch.addLabel)}</span>
+          <button class="ib" data-action="itemUp" data-s="${i}" data-k="${k}" title="Move up" ${k === 0 ? 'disabled' : ''}>↑</button>
+          <button class="ib" data-action="itemDown" data-s="${i}" data-k="${k}" title="Move down" ${k === lastI ? 'disabled' : ''}>↓</button>
+          <button class="ib" data-action="itemDup" data-s="${i}" data-k="${k}" title="Duplicate">⧉</button>
+          <button class="ib del" data-action="itemDel" data-s="${i}" data-k="${k}" title="Delete">✕</button>
+        </div>
+        <div class="item-body grid">
+          ${sch.fields.map(([key, label, ph, full]) => field(`sections.${i}.items.${k}.${key}`, label, it[key], ph, full || (s.type === 'skills' && key === 'value'))).join('')}
+          ${sch.bullets ? field(`sections.${i}.items.${k}.bullets`, sch.bullets.label, it.bullets, 'One achievement per line. Start with a strong verb and add numbers.', 1, true, sch.bullets.rows) : ''}
+        </div>
+      </div>`;
+    });
+    html += `<button class="add" data-action="itemAdd" data-s="${i}">+ Add ${esc(sch.addLabel)}</button></div></div>`;
+  });
+
+  html += `<div class="card"><div class="card-h"><h3>Add a section</h3></div><div class="card-b">
+    <div class="addsec">
+      <button class="btn" data-action="secAdd" data-type="education">Education</button>
+      <button class="btn" data-action="secAdd" data-type="experience">Experience</button>
+      <button class="btn" data-action="secAdd" data-type="projects">Projects</button>
+      <button class="btn" data-action="secAdd" data-type="skills">Skills</button>
+      <button class="btn" data-action="secAdd" data-type="custom" data-title="Leadership">Leadership / Activities</button>
+      <button class="btn" data-action="secAdd" data-type="custom" data-title="Awards">Awards</button>
+      <button class="btn" data-action="secAdd" data-type="custom" data-title="Certifications">Certifications</button>
+    </div>
+    <p class="hint">Rename any section by clicking its title. Empty entries don't appear on the resume. Your work saves automatically in this browser. Use <b>Export</b> to keep a backup file.</p>
+  </div></div>`;
+
+  $('#editor').innerHTML = html;
+}
+
+/* ================= Persistence & versions ================= */
+let saveTimer;
+function saveDraft() { clearTimeout(saveTimer); saveTimer = setTimeout(() => LS.set(KEY_DRAFT, state), 250); }
+function refreshVersions() {
+  const vs = LS.get(KEY_VERSIONS, {});
+  const names = Object.keys(vs).sort((a, b) => a.localeCompare(b));
+  const sel = $('#versionSel');
+  sel.innerHTML = `<option value="">${names.length ? 'Saved versions…' : 'No saved versions'}</option>` +
+    names.map(n => `<option value="${esc(n)}"${n === loadedName ? ' selected' : ''}>${esc(n)}</option>`).join('');
+}
+function loadState(d, name = '') {
+  state = normalize(JSON.parse(JSON.stringify(d)));
+  loadedName = name; LS.set(KEY_LOADED, name);
+  collapsed.clear();
+  applySettings(); renderEditor(); renderResume(); saveDraft(); refreshVersions();
+}
+
+/* ================= Events ================= */
+const editor = $('#editor');
+editor.addEventListener('input', e => {
+  const p = e.target.dataset.path; if (!p) return;
+  let v = e.target.value;
+  if (p.startsWith('settings.') && p !== 'settings.font' && p !== 'settings.paper') v = parseFloat(v);
+  setPath(state, p, v);
+  if (p.startsWith('settings.')) applySettings();
+  const m = p.match(/^sections\.(\d+)\.items\.(\d+)\./);
+  if (m) {
+    const s = state.sections[+m[1]], it = s.items[+m[2]];
+    const el = editor.querySelector(`[data-sumfor="${it.id}"]`);
+    if (el) { const sum = summary(s.type, it); el.textContent = sum || 'New ' + SCHEMAS[s.type].addLabel; el.classList.toggle('empty', !sum); }
+  }
+  renderResume(); saveDraft();
+});
+editor.addEventListener('change', e => { if (e.target.tagName === 'SELECT') e.target.dispatchEvent(new Event('input', { bubbles: true })); });
+
+/* Drag-to-reorder for the contact line */
+editor.addEventListener('pointerdown', e => {
+  const handle = e.target.closest('.handle'); if (!handle) return;
+  e.preventDefault();
+  const list = $('#clist'), row = handle.closest('.crow');
+  const rows = [...list.querySelectorAll('.crow')];
+  const from = rows.indexOf(row);
+  let to = from;
+  row.classList.add('dragging');
+  handle.setPointerCapture(e.pointerId);
+
+  const clear = () => rows.forEach(r => r.classList.remove('drop-before', 'drop-after'));
+  const onMove = ev => {
+    clear();
+    // index of the first row whose midpoint is below the pointer = insertion slot
+    let slot = rows.findIndex(r => { const b = r.getBoundingClientRect(); return ev.clientY < b.top + b.height / 2; });
+    if (slot === -1) slot = rows.length;
+    to = slot > from ? slot - 1 : slot;
+    if (to === from) return;
+    if (slot < rows.length) rows[slot].classList.add('drop-before'); else rows[rows.length - 1].classList.add('drop-after');
+  };
+  const onUp = () => {
+    handle.removeEventListener('pointermove', onMove);
+    handle.removeEventListener('pointerup', onUp);
+    handle.removeEventListener('pointercancel', onUp);
+    clear(); row.classList.remove('dragging');
+    if (to === from) return;
+    const ord = state.header.order;
+    ord.splice(to, 0, ord.splice(from, 1)[0]);
+    const y = editor.scrollTop;
+    renderEditor(); editor.scrollTop = y;
+    renderResume(); saveDraft();
+  };
+  handle.addEventListener('pointermove', onMove);
+  handle.addEventListener('pointerup', onUp);
+  handle.addEventListener('pointercancel', onUp);
+});
+
+const move = (arr, i, d) => { const j = i + d; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; };
+editor.addEventListener('click', e => {
+  const b = e.target.closest('[data-action]'); if (!b || b.disabled) return;
+  const a = b.dataset.action, i = +b.dataset.s, k = +b.dataset.k, secs = state.sections;
+  if (a !== 'itemToggle') e.stopPropagation();
+  switch (a) {
+    case 'itemToggle': collapsed.has(b.dataset.id) ? collapsed.delete(b.dataset.id) : collapsed.add(b.dataset.id); break;
+    case 'secUp': move(secs, i, -1); break;
+    case 'secDown': move(secs, i, 1); break;
+    case 'secToggle': secs[i].visible = !secs[i].visible; break;
+    case 'secDel': if (!confirm(`Delete the "${secs[i].title}" section?`)) return; secs.splice(i, 1); break;
+    case 'secAdd': secs.push(blankSection(b.dataset.type, b.dataset.title)); break;
+    case 'itemAdd': secs[i].items.push(blankItem(secs[i].type)); break;
+    case 'itemUp': move(secs[i].items, k, -1); break;
+    case 'itemDown': move(secs[i].items, k, 1); break;
+    case 'itemDup': secs[i].items.splice(k + 1, 0, { ...secs[i].items[k], id: uid() }); break;
+    case 'itemDel': {
+      const it = secs[i].items[k];
+      if (!isEmpty(it) && !confirm(`Delete "${summary(secs[i].type, it) || 'this entry'}"?`)) return;
+      secs[i].items.splice(k, 1); break;
+    }
+  }
+  const y = editor.scrollTop;
+  renderEditor(); editor.scrollTop = y;
+  if (a === 'secAdd') editor.scrollTop = editor.scrollHeight;
+  renderResume(); saveDraft();
+});
+
+function download(name, text) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+const fileBase = () => ((state.header.name || 'My').trim().replace(/[^\w\- ]+/g, '').replace(/\s+/g, '_') || 'My') + '_Resume';
+
+function printPdf() {
+  const old = document.title;
+  document.title = fileBase();
+  window.addEventListener('afterprint', () => { document.title = old; }, { once: true });
+  window.print();
+}
+
+document.querySelector('.topbar').addEventListener('click', e => {
+  const b = e.target.closest('[data-top]'); if (!b) return;
+  switch (b.dataset.top) {
+    case 'new': if (confirm('Start a new blank resume? Your current draft will be replaced (saved versions are kept).')) loadState(blankResume()); break;
+    case 'sample': if (confirm('Load the example resume? Your current draft will be replaced (saved versions are kept).')) loadState(sampleResume()); break;
+    case 'import': $('#fileIn').click(); break;
+    case 'export': download(fileBase() + '.json', JSON.stringify(state, null, 2)); break;
+    case 'saveVersion': {
+      const name = (prompt('Name this version (for example "Google SWE" or "Backend roles"):', loadedName) || '').trim();
+      if (!name) return;
+      const vs = LS.get(KEY_VERSIONS, {});
+      if (vs[name] && name !== loadedName && !confirm(`Overwrite the saved version "${name}"?`)) return;
+      vs[name] = state; LS.set(KEY_VERSIONS, vs);
+      loadedName = name; LS.set(KEY_LOADED, name); refreshVersions();
+      break;
+    }
+    case 'deleteVersion': {
+      const name = $('#versionSel').value;
+      if (!name) { alert('Pick a saved version from the dropdown first.'); return; }
+      if (!confirm(`Delete the saved version "${name}"? Your current draft stays as it is.`)) return;
+      const vs = LS.get(KEY_VERSIONS, {}); delete vs[name]; LS.set(KEY_VERSIONS, vs);
+      if (loadedName === name) { loadedName = ''; LS.set(KEY_LOADED, ''); }
+      refreshVersions();
+      break;
+    }
+    case 'pdf':
+      if (LS.get(KEY_SKIP, false)) printPdf(); else $('#pdfDlg').showModal();
+      break;
+  }
+});
+
+$('#versionSel').addEventListener('change', e => {
+  const name = e.target.value; if (!name) return;
+  if (!confirm(`Load "${name}"? Your current draft will be replaced. Save it as a version first if you want to keep it.`)) { refreshVersions(); return; }
+  loadState(LS.get(KEY_VERSIONS, {})[name], name);
+});
+
+$('#fileIn').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (!d.header || !Array.isArray(d.sections)) throw new Error('That file isn’t a resume export.');
+    loadState(d);
+  } catch (err) { alert('Could not import: ' + err.message); }
+});
+
+$('#dlgCancel').onclick = () => $('#pdfDlg').close();
+$('#dlgGo').onclick = () => {
+  if ($('#dlgSkip').checked) LS.set(KEY_SKIP, true);
+  $('#pdfDlg').close();
+  setTimeout(printPdf, 50);
+};
+window.addEventListener('beforeprint', () => { if (!document.title.endsWith('_Resume')) document.title = fileBase(); });
+window.addEventListener('resize', layoutPreview);
+
+/* ================= Init ================= */
+applySettings(); renderEditor(); renderResume(); refreshVersions();
+document.fonts?.ready.then(layoutPreview);
+setTimeout(layoutPreview, 800);
+</script>
+</body>
+</html>
