@@ -323,13 +323,13 @@ function sampleResume() {
           ].join('\n') },
       ]),
       S('projects', 'Projects', [
-        { name: 'Ring Dynamics', tech: 'Real-Time Video Analytics System', link: '', start: '', end: '',
+        { name: 'Ring Dynamics', tech: 'Real-Time Video Analytics System', link: 'https://zhandolia.github.io/ring-dynamics/', start: '', end: '',
           bullets: [
             'Built end-to-end video ML pipeline (YOLOv8-pose + ByteTrack) with color-based re-identification across camera cuts, running at 24 FPS on CPU',
             'Designed temporal scoring model combining pose and motion features into 4 EMA-smoothed metrics, producing per-second event predictions and round-level scores exported as structured JSON',
             'Deployed full-stack platform (FastAPI, Next.js) with video upload, YouTube ingestion, byte-range streaming, and a live metrics dashboard synced to annotated video',
           ].join('\n') },
-        { name: 'Zeta Engine', tech: 'Monte Carlo Decision Engine', link: '', start: '', end: '',
+        { name: 'Zeta Engine', tech: 'Monte Carlo Decision Engine', link: 'https://zhandolia.github.io/zeta-engine/', start: '', end: '',
           bullets: [
             'Engineered browser-based poker engine running 2,400 Monte Carlo hand evaluations per move in under 10 ms entirely client-side, with no backend; deployed through a GitHub Actions CI/CD pipeline',
             'Designed an 8-term decision model recomputed across 6,400 points each move and rendered as a live heatmap, making the engine’s expected-value tradeoffs visible in real time',
