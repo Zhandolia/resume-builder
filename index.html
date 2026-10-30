@@ -113,15 +113,15 @@
   .r-contact { text-align: center; font-size: .91em; }
   .r-contact a { text-decoration: underline; text-underline-offset: 1.5px; text-decoration-thickness: .5px; }
   .r-contact .sep { margin: 0 .45em; }
-  .r-sec { margin-top: .55em; }
-  .r-sec h2 { font-size: 1.09em; font-weight: 400; font-variant: small-caps; letter-spacing: .01em; margin: 0 0 .3em; padding-bottom: .08em; border-bottom: .6pt solid #000; break-after: avoid; }
+  .r-sec { margin-top: calc(.55em * var(--gap, 1)); }
+  .r-sec h2 { font-size: 1.09em; font-weight: 400; font-variant: small-caps; letter-spacing: .01em; margin: 0 0 calc(.3em * var(--gap, 1)); padding-bottom: .08em; border-bottom: .6pt solid #000; break-after: avoid; }
   .r-items { padding-left: .15in; }
-  .r-entry { margin-bottom: .32em; break-inside: avoid; }
+  .r-entry { margin-bottom: calc(.32em * var(--gap, 1)); break-inside: avoid; }
   .r-row { display: flex; justify-content: space-between; align-items: baseline; gap: 1.2em; }
   .r-row .r { white-space: nowrap; text-align: right; flex-shrink: 0; }
   .r-row.sub { font-size: .91em; font-style: italic; }
   .r-bul { margin: .12em 0 0; padding-left: .2in; font-size: .91em; }
-  .r-bul li { margin-bottom: .1em; padding-left: .1em; }
+  .r-bul li { margin-bottom: calc(.1em * var(--gap, 1)); padding-left: .1em; }
   .r-skills { font-size: .91em; }
   .r-skills div { margin-bottom: .1em; }
   .r-pipe { margin: 0 .35em; }
@@ -251,7 +251,8 @@ const SCHEMAS = {
   ], bullets: { label: BULLETS_LABEL, rows: 5 } },
   projects: { name: 'Projects', addLabel: 'project', fields: [
     ['name', 'Project name', 'Gitlytics'],
-    ['tech', 'Technologies', 'Python, Flask, React'],
+    ['tech', 'Tagline (after name)', 'Real-Time Video Analytics System'],
+    ['stack', 'Subtitle: languages / stack / frameworks', 'Python, FastAPI, React, Docker', 1],
     ['link', 'Link (optional)', 'github.com/you/gitlytics', 1],
     ['start', 'Start date', 'Jan. 2025'],
     ['end', 'End date', 'Present'],
@@ -271,7 +272,7 @@ const SCHEMAS = {
 
 /* ================= State ================= */
 const uid = () => Math.random().toString(36).slice(2, 10);
-const DEFAULT_SETTINGS = { font: 'cm', size: 11, lh: 1.2, margin: 0.5, paper: 'letter' };
+const DEFAULT_SETTINGS = { font: 'cm', size: 11, lh: 1.2, margin: 0.5, paper: 'letter', gap: 1 };
 
 function blankItem(type) {
   const it = { id: uid() };
@@ -323,13 +324,13 @@ function sampleResume() {
           ].join('\n') },
       ]),
       S('projects', 'Projects', [
-        { name: 'Ring Dynamics', tech: 'Real-Time Video Analytics System', link: 'https://zhandolia.github.io/ring-dynamics/', start: '', end: '',
+        { name: 'Ring Dynamics', tech: 'Real-Time Video Analytics System', stack: 'Python, TypeScript, YOLOv8, ByteTrack, FastAPI, Next.js, Docker', link: 'https://zhandolia.github.io/ring-dynamics/', start: '', end: '',
           bullets: [
             'Built end-to-end video ML pipeline (YOLOv8-pose + ByteTrack) with color-based re-identification across camera cuts, running at 24 FPS on CPU',
             'Designed temporal scoring model combining pose and motion features into 4 EMA-smoothed metrics, producing per-second event predictions and round-level scores exported as structured JSON',
             'Deployed full-stack platform (FastAPI, Next.js) with video upload, YouTube ingestion, byte-range streaming, and a live metrics dashboard synced to annotated video',
           ].join('\n') },
-        { name: 'Zeta Engine', tech: 'Monte Carlo Decision Engine', link: 'https://zhandolia.github.io/zeta-engine/', start: '', end: '',
+        { name: 'Zeta Engine', tech: 'Monte Carlo Decision Engine', stack: 'JavaScript, Python, Java, R, HTML/CSS, GitHub Actions', link: 'https://zhandolia.github.io/zeta-engine/', start: '', end: '',
           bullets: [
             'Engineered browser-based poker engine running 2,400 Monte Carlo hand evaluations per move in under 10 ms entirely client-side, with no backend; deployed through a GitHub Actions CI/CD pipeline',
             'Designed an 8-term decision model recomputed across 6,400 points each move and rendered as a live heatmap, making the engine’s expected-value tradeoffs visible in real time',
@@ -417,7 +418,7 @@ const RENDER = {
     let l = `<b>${esc(it.name)}</b>`;
     if (it.tech) l += `<span class="r-pipe">|</span><i>${esc(it.tech)}</i>`;
     if (it.link) l += `<span class="r-pipe">|</span><a href="${esc(hrefUrl(it.link))}"><u>${esc(displayUrl(it.link))}</u></a>`;
-    return row(l, esc(dates(it))) + bullets(it);
+    return row(l, esc(dates(it))) + (it.stack ? row(esc(it.stack), '', 'sub') : '') + bullets(it);
   },
 };
 
@@ -457,6 +458,7 @@ function applySettings() {
   page.style.fontFamily = (FONTS[st.font] || FONTS.cm).css;
   page.style.fontSize = st.size + 'pt';
   page.style.setProperty('--lh', st.lh);
+  page.style.setProperty('--gap', st.gap);
   page.style.padding = st.margin + 'in';
   page.style.width = paper.w + 'in';
   $('#pageRule').textContent = `@page { size: ${st.paper === 'a4' ? 'A4' : 'letter'}; margin: ${st.margin}in; }`;
@@ -491,6 +493,20 @@ function layoutPreview() {
   }
 }
 
+/* Find the largest spacing that still keeps the content on one page. */
+function fillPage() {
+  const st = state.settings, paper = PAPER[st.paper] || PAPER.letter;
+  const usable = (paper.h - 2 * st.margin) * 96 - 2; // small safety margin for print rounding
+  const page = $('#page'), res = $('#resume');
+  const fits = g => { page.style.setProperty('--gap', g); return res.scrollHeight <= usable; };
+  let lo = 0.5, hi = 4;
+  if (!fits(lo)) { st.gap = lo; alert('This resume is longer than one page even with tight spacing. Try a smaller font size, margins or line spacing.'); return; }
+  if (fits(hi)) lo = hi;
+  else for (let i = 0; i < 14; i++) { const mid = (lo + hi) / 2; fits(mid) ? lo = mid : hi = mid; }
+  st.gap = Math.floor(lo * 20) / 20; // round down to the slider's 0.05 steps
+  applySettings();
+}
+
 /* ================= Editor rendering ================= */
 function field(path, label, value, ph, full, textarea, rows) {
   const cls = 'f' + (full ? ' full' : '');
@@ -523,6 +539,9 @@ function renderEditor() {
     ${selectField('settings.size', 'Font size', st.size, [10, 10.5, 11, 11.5, 12].map(v => [v, v + ' pt']))}
     ${selectField('settings.margin', 'Margins', st.margin, [0.4, 0.5, 0.6, 0.75, 1].map(v => [v, v + ' in']))}
     ${selectField('settings.lh', 'Line spacing', st.lh, [[1.1, 'Tight'], [1.15, 'Compact'], [1.2, 'Normal'], [1.3, 'Relaxed']])}
+    <label class="f"><span>Spacing between entries: <b id="gapVal">${Math.round(st.gap * 100)}%</b></span>
+      <input type="range" data-path="settings.gap" min="0.5" max="4" step="0.05" value="${st.gap}"></label>
+    <div class="f full"><button class="btn" data-action="fillPage" title="Spread sections and entries so the content reaches the bottom of page 1">Fill page: spread content to the bottom</button></div>
   </div></div>`;
 
   html += `<div class="card"><div class="card-h"><h3>Header</h3></div><div class="card-b">
@@ -609,6 +628,7 @@ editor.addEventListener('input', e => {
   if (p.startsWith('settings.') && p !== 'settings.font' && p !== 'settings.paper') v = parseFloat(v);
   setPath(state, p, v);
   if (p.startsWith('settings.')) applySettings();
+  if (p === 'settings.gap') $('#gapVal').textContent = Math.round(v * 100) + '%';
   const m = p.match(/^sections\.(\d+)\.items\.(\d+)\./);
   if (m) {
     const s = state.sections[+m[1]], it = s.items[+m[2]];
@@ -668,6 +688,7 @@ editor.addEventListener('click', e => {
     case 'secDown': move(secs, i, 1); break;
     case 'secToggle': secs[i].visible = !secs[i].visible; break;
     case 'secDel': if (!confirm(`Delete the "${secs[i].title}" section?`)) return; secs.splice(i, 1); break;
+    case 'fillPage': fillPage(); break;
     case 'secAdd': secs.push(blankSection(b.dataset.type, b.dataset.title)); break;
     case 'itemAdd': secs[i].items.push(blankItem(secs[i].type)); break;
     case 'itemUp': move(secs[i].items, k, -1); break;

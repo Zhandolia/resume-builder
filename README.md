@@ -6,7 +6,8 @@ A simple, single-page resume builder modeled on Jake's Resume (the popular LaTeX
 - Fonts: Computer Modern (Jake's), Times New Roman, Garamond, Calibri, Arial and more
 - Header with a drag-to-reorder contact line (phone, email, LinkedIn, GitHub, website, location)
 - Sections for Education, Experience, Projects, Technical Skills and custom sections (Leadership, Awards, Certifications)
-- One-page fit indicator
+- Project subtitle line for languages / stack / frameworks
+- One-page fit indicator, a spacing slider and a "Fill page" button that spreads content to the bottom of the page
 - Download as an ATS-friendly PDF with selectable text and clickable links
 - Autosaves in your browser, with named versions and JSON import/export
 
