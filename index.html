@@ -158,7 +158,7 @@
 <header class="topbar">
   <div class="brand">Resume<span>Builder</span></div>
   <button class="btn ghost" data-top="new" title="Start a blank resume">New</button>
-  <button class="btn ghost" data-top="sample" title="Load the example resume">Example</button>
+  <button class="btn ghost" data-top="sample" title="Load the default resume template">Template</button>
   <button class="btn ghost" data-top="import" title="Load a .json resume file">Import</button>
   <button class="btn ghost" data-top="export" title="Save this resume as a .json file">Export</button>
   <div class="group">
@@ -222,6 +222,7 @@ const FONTS = {
 };
 const PAPER = { letter: { w: 8.5, h: 11, label: 'US Letter (8.5 × 11 in)' }, a4: { w: 8.27, h: 11.69, label: 'A4 (210 × 297 mm)' } };
 const CONTACT = {
+  note:     ['Other', 'U.S. Citizen'],
   phone:    ['Phone', '(555) 123-4567'],
   email:    ['Email', 'you@email.com'],
   linkedin: ['LinkedIn', 'linkedin.com/in/you'],
@@ -229,7 +230,7 @@ const CONTACT = {
   website:  ['Website', 'yoursite.dev'],
   location: ['Location', 'Austin, TX'],
 };
-const CONTACT_ORDER = ['phone', 'email', 'linkedin', 'github', 'website', 'location'];
+const CONTACT_ORDER = ['note', 'phone', 'email', 'linkedin', 'github', 'website', 'location'];
 const BULLETS_LABEL = 'Bullet points (one per line; **bold** and *italic* work)';
 
 const SCHEMAS = {
@@ -284,7 +285,7 @@ function blankSection(type, title) {
 function blankResume() {
   return {
     settings: { ...DEFAULT_SETTINGS },
-    header: { name: '', phone: '', email: '', linkedin: '', github: '', website: '', location: '', order: [...CONTACT_ORDER] },
+    header: { name: '', note: '', phone: '', email: '', linkedin: '', github: '', website: '', location: '', order: [...CONTACT_ORDER] },
     sections: [blankSection('education'), blankSection('experience'), blankSection('projects'), blankSection('skills')],
   };
 }
@@ -292,29 +293,54 @@ function sampleResume() {
   const S = (type, title, items) => ({ id: uid(), type, title, visible: true, items: items.map(x => ({ id: uid(), ...x })) });
   return {
     settings: { ...DEFAULT_SETTINGS },
-    header: { name: 'Alex Morgan', phone: '(512) 555-0142', email: 'alex.morgan@email.com', linkedin: 'linkedin.com/in/alexmorgan', github: 'github.com/alexmorgan', website: '', location: 'Austin, TX' },
+    header: {
+      name: 'Zhandos Brown', note: 'U.S. Citizen', phone: '(857) 313-8727', email: 'zhandosbrown@gmail.com',
+      linkedin: 'linkedin.com/in/zhanbrown', github: '', website: 'zhandolia.github.io', location: '',
+      order: ['note', 'phone', 'email', 'linkedin', 'website', 'github', 'location'],
+    },
     sections: [
       S('education', 'Education', [
-        { school: 'University of Texas at Austin', location: 'Austin, TX', degree: 'Bachelor of Science in Computer Science, Minor in Mathematics', gpa: '3.8/4.0', start: 'Aug. 2022', end: 'May 2026',
-          bullets: '**Relevant Coursework:** Data Structures, Algorithms, Operating Systems, Databases, Machine Learning' },
+        { school: 'Boston University', location: 'Boston, MA', degree: 'B.A. Applied Mathematics', gpa: '', start: '', end: 'Dec 2026',
+          bullets: '**Relevant Coursework:** Probability, Stochastic Processes, Linear Algebra, Robotics & Autonomous System' },
       ]),
       S('experience', 'Experience', [
-        { title: 'Software Engineer Intern', company: 'Northwind Analytics', location: 'Seattle, WA', start: 'May 2025', end: 'Aug. 2025',
-          bullets: 'Built a real-time event ingestion service in Go handling **40K events/sec**, cutting dashboard latency by 65%\nDesigned a PostgreSQL partitioning scheme that reduced monthly storage costs by $12K\nAdded end-to-end tests with Playwright, raising release confidence and catching 30+ regressions pre-deploy' },
-        { title: 'Undergraduate Research Assistant', company: 'UT Austin Systems Lab', location: 'Austin, TX', start: 'Sep. 2024', end: 'Present',
-          bullets: 'Developed a Python profiling toolkit to analyze memory usage across 200+ distributed training jobs\nCo-authored a workshop paper on scheduling heuristics for GPU clusters' },
+        { title: 'Software Engineer, Backend & ML', company: 'Boston University Spark! Fellowship', location: 'Boston, MA', start: 'Jan 2026', end: 'May 2026',
+          bullets: [
+            'Built and deployed production ML serving stack for ETA prediction, pricing, and routing models via FastAPI and Docker on AWS, sustaining 150 req/s at 60 ms p95 under load testing',
+            'Trained PyTorch ETA prediction model on 100K historical trips, reducing mean error 38% (6.2 to 3.8 min) vs. distance-based baseline on held-out test set; cut inference latency 67% (180 to 60 ms) with ONNX Runtime',
+            'Built DQN reinforcement-learning agent optimizing routing against a trip-time reward, cutting simulated trip times 11% vs. shortest-path baseline; prototype selected for 3-month pilot with 2 partners after demo to 40+ stakeholders and investors',
+          ].join('\n') },
+        { title: 'Mobile Engineer Intern, iOS', company: 'Fidelity Investments (NetBenefits Health)', location: 'Merrimack, NH', start: 'Jun 2025', end: 'Aug 2025',
+          bullets: [
+            'Reduced content retrieval and rendering latency 70% (300 to 90 ms) across 100K+ daily active sessions',
+            'Refactored legacy monolithic iOS rendering engine into modular SwiftUI components, enabling 40% faster development cycles',
+          ].join('\n') },
+        { title: 'Research Software Engineer, Robotics', company: 'Boston University College of Engineering', location: 'Boston, MA', start: 'Jun 2023', end: 'May 2026',
+          bullets: [
+            'Built parallel PyTorch/YOLO vision pipeline training and evaluating on 50K+ annotated frames, achieving 94% classification accuracy; presented at Innovate@BU',
+            'Built data and deployment infrastructure for multi-drone fleet (ROS 2, NVIDIA Jetson), sustaining 500 GB+ daily sensor throughput and sub-50 ms latency across 15+ containerized AWS deployments',
+            'Architected SLAM reconstruction pipeline (PCL/Open3D) with sub-2 mm surface error',
+          ].join('\n') },
       ]),
       S('projects', 'Projects', [
-        { name: 'Gitlytics', tech: 'Python, Flask, React, PostgreSQL, Docker', link: '', start: 'Jan. 2025', end: 'Present',
-          bullets: 'Developed a full-stack web app that visualizes GitHub repository activity with interactive charts\nImplemented OAuth login and background jobs with Celery and Redis to fetch data asynchronously' },
-        { name: 'Campus Eats', tech: 'TypeScript, Next.js, Firebase', link: '', start: 'Sep. 2024', end: 'Dec. 2024',
-          bullets: 'Shipped a food-ordering app used by 1,500+ students with live order tracking' },
+        { name: 'Ring Dynamics', tech: 'Real-Time Video Analytics System', link: '', start: '', end: '',
+          bullets: [
+            'Built end-to-end video ML pipeline (YOLOv8-pose + ByteTrack) with color-based re-identification across camera cuts, running at 24 FPS on CPU',
+            'Designed temporal scoring model combining pose and motion features into 4 EMA-smoothed metrics, producing per-second event predictions and round-level scores exported as structured JSON',
+            'Deployed full-stack platform (FastAPI, Next.js) with video upload, YouTube ingestion, byte-range streaming, and a live metrics dashboard synced to annotated video',
+          ].join('\n') },
+        { name: 'Zeta Engine', tech: 'Monte Carlo Decision Engine', link: '', start: '', end: '',
+          bullets: [
+            'Engineered browser-based poker engine running 2,400 Monte Carlo hand evaluations per move in under 10 ms entirely client-side, with no backend; deployed through a GitHub Actions CI/CD pipeline',
+            'Designed an 8-term decision model recomputed across 6,400 points each move and rendered as a live heatmap, making the engine’s expected-value tradeoffs visible in real time',
+            'Implemented Counterfactual Regret Minimization (CFR) in Python to solve Kuhn poker’s Nash equilibrium, grounding the engine’s strategy in game-theoretic optimization',
+          ].join('\n') },
       ]),
       S('skills', 'Technical Skills', [
-        { label: 'Languages', value: 'Java, Python, Go, C/C++, SQL, JavaScript, TypeScript, HTML/CSS' },
-        { label: 'Frameworks', value: 'React, Node.js, Flask, Next.js, JUnit, Pytest' },
-        { label: 'Developer Tools', value: 'Git, Docker, AWS, Google Cloud, Linux, VS Code' },
-        { label: 'Libraries', value: 'pandas, NumPy, Matplotlib, PyTorch' },
+        { label: 'ML', value: 'PyTorch, ONNX Runtime, YOLOv8, ByteTrack, NumPy' },
+        { label: 'Serving & Infra', value: 'FastAPI, Docker, AWS, PostgreSQL, CI/CD, Git' },
+        { label: 'Languages', value: 'Python, SQL, C++, TypeScript, Swift, Java, JavaScript' },
+        { label: 'Robotics', value: 'ROS 2, SLAM, PCL, Open3D, NVIDIA Jetson, Linux' },
       ]),
     ],
   };
@@ -342,7 +368,10 @@ function normalize(d) {
   return r;
 }
 
-let state = normalize(LS.get(KEY_DRAFT, null) || sampleResume());
+let savedDraft = LS.get(KEY_DRAFT, null);
+// Drafts still holding the old built-in "Alex Morgan" example get the current template instead.
+if (savedDraft?.header?.email === 'alex.morgan@email.com') savedDraft = null;
+let state = normalize(savedDraft || sampleResume());
 let loadedName = LS.get(KEY_LOADED, '');
 const collapsed = new Set();
 
@@ -399,7 +428,7 @@ function renderResume() {
     const v = String(h[k] || '').trim();
     if (!v) continue;
     if (k === 'email') contact.push(`<a href="mailto:${esc(v)}">${esc(v)}</a>`);
-    else if (k === 'phone' || k === 'location') contact.push(`<span>${esc(v)}</span>`);
+    else if (k === 'phone' || k === 'location' || k === 'note') contact.push(`<span>${esc(v)}</span>`);
     else contact.push(`<a href="${esc(hrefUrl(v))}">${esc(displayUrl(v))}</a>`);
   }
 
@@ -674,7 +703,7 @@ document.querySelector('.topbar').addEventListener('click', e => {
   const b = e.target.closest('[data-top]'); if (!b) return;
   switch (b.dataset.top) {
     case 'new': if (confirm('Start a new blank resume? Your current draft will be replaced (saved versions are kept).')) loadState(blankResume()); break;
-    case 'sample': if (confirm('Load the example resume? Your current draft will be replaced (saved versions are kept).')) loadState(sampleResume()); break;
+    case 'sample': if (confirm('Load the default template? Your current draft will be replaced (saved versions are kept).')) loadState(sampleResume()); break;
     case 'import': $('#fileIn').click(); break;
     case 'export': download(fileBase() + '.json', JSON.stringify(state, null, 2)); break;
     case 'saveVersion': {
